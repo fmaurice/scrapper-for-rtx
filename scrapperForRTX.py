@@ -8,14 +8,22 @@ from subprocess import Popen, PIPE
 class ScraperForRTX:
 
     messages = []
-    outOfStock = True
 
     def start(self):
+        outOfStock = self.checkTopAchatPage()
+        outOfStock = self.checkLDLCPage()
 
+        if not outOfStock:
+            self.sendEmail()
+        else:
+            self.printok('All is out of stock')
+
+    def checkTopAchatPage(self):
+        self.printok ("Top Achat page...")
+        # No JS needed here
+        outOfStock = True
         session = HTMLSession()
 
-        # Top achat page
-        self.printok ("Top Achat page")
 
         r = session.get('https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html')
         sections = r.html.find('.grille-produit section')
@@ -25,15 +33,18 @@ class ScraperForRTX:
                 if not 'en-rupture' in section.attrs['class']:
                     self.printnok("No out of stock found for %s" % section.text)
                     self.printnok("Link : %s" % list(section.absolute_links)[0])
-                    self.outOfStock = False
+                    outOfStock = False
 
-        if self.outOfStock:
-            self.printok('All is out of stock')
-        else:
-            # send an email
-            self.sendEmail()
+        return outOfStock
 
-        # LDLC page
+    def checkLDLCPage(self):
+        self.printok ("LDLC page...")
+        # JS Needed here
+        outOfStock = True
+
+        return outOfStock
+
+
 
     def sendEmail(self):
         p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
