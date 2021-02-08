@@ -33,6 +33,8 @@ class ScraperForRTX:
             # send an email
             self.sendEmail()
 
+        # LDLC page
+
     def sendEmail(self):
         p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
         strMessage = "\n".join(self.messages)
