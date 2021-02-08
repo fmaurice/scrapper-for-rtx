@@ -34,7 +34,7 @@ class ScraperForRTX:
             self.sendEmail()
 
     def sendEmail(self):
-        p = Popen(["mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
+        p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
         strMessage = "\n".join(self.messages)
         p.communicate(strMessage)
         self.printnok("Email sended")
