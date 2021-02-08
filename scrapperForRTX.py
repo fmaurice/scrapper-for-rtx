@@ -1,13 +1,18 @@
+import os
 from requests_html import HTMLSession
 from colorama import Fore, Back, Style 
 import datetime
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
-
+from selenium import webdriver
+from pyvirtualdisplay import Display 
 
 class ScraperForRTX:
 
     messages = []
+    currPath = os.path.dirname(os.path.abspath(__file__))
+    URL_FOR_TOP_ACHAT = 'https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html'
+    URL_FOR_LDLC = 'https://www.ldlc.com/informatique/pieces-informatique/carte-graphique-interne/c4684/+fv121-19183.html'
 
     def start(self):
         outOfStock = self.checkTopAchatPage()
@@ -24,15 +29,14 @@ class ScraperForRTX:
         outOfStock = True
         session = HTMLSession()
 
-
-        r = session.get('https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html')
+        r = session.get(self.URL_FOR_TOP_ACHAT)
         sections = r.html.find('.grille-produit section')
 
         for section in sections:
             if 'class' in section.attrs:
                 if not 'en-rupture' in section.attrs['class']:
-                    self.printnok("No out of stock found for %s" % section.text)
-                    self.printnok("Link : %s" % list(section.absolute_links)[0])
+                    self.printnok(section.text)
+                    self.printnok("*** Link : %s" % list(section.absolute_links)[0])
                     outOfStock = False
 
         return outOfStock
@@ -42,9 +46,25 @@ class ScraperForRTX:
         # JS Needed here
         outOfStock = True
 
+        display = Display(visible=0, size=(1024, 768)) 
+        display.start()
+
+
+        driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
+            service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'])
+
+        driver.get(self.URL_FOR_LDLC)
+
+        
+        listing = driver.find_elements_by_css_selector('.listing-product li')
+        for listElement in listing:
+            element = listElement.find_element_by_css_selector('.stocks .modal-stock-web .modal-stock-web')
+            if element.text != 'RUPTURE':
+                self.printnok(listElement.text)
+                self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
+                outOfStock = False
+
         return outOfStock
-
-
 
     def sendEmail(self):
         p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
