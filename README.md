@@ -1,5 +1,5 @@
 # scrapper-for-rtx
-Check if a RTX 3080 is in stock on some french website :)
+Check if a RTX 3080 is in stock on some french websites :)
 To use in a cron job
 
 This script is intended to use on a linux server.
