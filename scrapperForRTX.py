@@ -15,10 +15,11 @@ class ScraperForRTX:
     URL_FOR_LDLC = 'https://www.ldlc.com/informatique/pieces-informatique/carte-graphique-interne/c4684/+fv121-19183.html'
 
     def start(self):
-        outOfStock = self.checkTopAchatPage()
-        outOfStock = self.checkLDLCPage()
+        outOfstocks = []
+        outOfstocks.append(self.checkTopAchatPage())
+        outOfstocks.append(self.checkLDLCPage())
 
-        if not outOfStock:
+        if False in outOfstocks:
             self.sendEmail()
         else:
             self.printok('All is out of stock')
