@@ -70,14 +70,13 @@ class ScraperForRTX:
     def sendEmail(self):
         p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
         strMessage = "\n".join(self.messages)
-        p.communicate(strMessage)
+        p.communicate(strMessage.encode(strMessage))
         self.printnok("Email sended")
 
     def printok(self, message):
-        strMessage = "\n".join(self.messages)
-        p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
-        p.communicate(str.encode(strMessage))
-        self.printnok("Email sended")
+        self.messages.append(message)
+        now = datetime.datetime.now()
+        print (Fore.GREEN + now.strftime('%Y-%m-%d %H:%M:%S') + ' ' + message)    
 
     def printnok(self, message):
         self.messages.append(message)
