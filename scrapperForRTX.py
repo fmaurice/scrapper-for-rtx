@@ -2,10 +2,12 @@ import os
 from requests_html import HTMLSession
 from colorama import Fore, Back, Style 
 import datetime
-from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 from selenium import webdriver
 from pyvirtualdisplay import Display 
+import smtplib
+from email.mime.text import MIMEText
+
 
 class ScraperForRTX:
 
@@ -86,9 +88,13 @@ class ScraperForRTX:
         return outOfStock
 
     def sendEmail(self):
-        p = Popen(["/usr/bin/mail", "-s", '"RTX 3080 watcher"', 'root'], stdin=PIPE)
         strMessage = "\n".join(self.messages)
-        p.communicate(strMessage.encode(strMessage))
+        msg = MIMEText(strMessage)
+        msg['Subject'] = 'RTX 3080 scrapper'
+        msg['To'] = 'root'
+        s = smtplib.SMTP('localhost')
+        s.sendmail('', 'root', msg.as_string())
+        s.quit()
         self.printnok("Email sended")
 
     def printok(self, message):
