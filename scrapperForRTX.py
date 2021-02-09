@@ -30,15 +30,22 @@ class ScraperForRTX:
         outOfStock = True
         session = HTMLSession()
 
-        r = session.get(self.URL_FOR_TOP_ACHAT)
-        sections = r.html.find('.grille-produit section')
+        try:
+            r = session.get(self.URL_FOR_TOP_ACHAT)
+            sections = r.html.find('.grille-produit section')
 
-        for section in sections:
-            if 'class' in section.attrs:
-                if not 'en-rupture' in section.attrs['class']:
-                    self.printnok(section.text)
-                    self.printnok("*** Link : %s" % list(section.absolute_links)[0])
-                    outOfStock = False
+            if len(sections) == 0:
+                raise Exception('Element not found in the page')
+
+            for section in sections:
+                if 'class' in section.attrs:
+                    if not 'en-rupture' in section.attrs['class']:
+                        self.printnok(section.text)
+                        self.printnok("*** Link : %s" % list(section.absolute_links)[0])
+                        outOfStock = False
+        except Exception as e:
+            self.printnok("Something goes wrong : " + str(e))
+            outOfStock = False
 
         return outOfStock
 
@@ -50,20 +57,26 @@ class ScraperForRTX:
         display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
         display.start()
 
-
         driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
             service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'])
 
         driver.get(self.URL_FOR_LDLC)
 
-        
-        listing = driver.find_elements_by_css_selector('.listing-product li')
-        for listElement in listing:
-            element = listElement.find_element_by_css_selector('.stocks .modal-stock-web .modal-stock-web')
-            if element.text != 'RUPTURE':
-                self.printnok(listElement.text)
-                self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
-                outOfStock = False
+        try:        
+            listing = driver.find_elements_by_css_selector('.listing-product li')
+
+            if len(listing) == 0:
+                raise Exception('Element not found in the page')
+
+            for listElement in listing:
+                element = listElement.find_element_by_css_selector('.stocks .modal-stock-web .modal-stock-web')
+                if element.text != 'RUPTURE':
+                    self.printnok(listElement.text)
+                    self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
+                    outOfStock = False
+        except Exception as e:
+            self.printnok("Something goes wrong : " + str(e))
+            outOfStock = False
 
         if not outOfStock:
             now = datetime.datetime.now()
