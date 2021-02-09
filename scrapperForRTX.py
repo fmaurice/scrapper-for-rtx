@@ -47,7 +47,7 @@ class ScraperForRTX:
         # JS Needed here
         outOfStock = True
 
-        display = Display(visible=0, size=(1024, 768)) 
+        display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
         display.start()
 
 
@@ -64,6 +64,11 @@ class ScraperForRTX:
                 self.printnok(listElement.text)
                 self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
                 outOfStock = False
+
+        if not outOfStock:
+            now = datetime.datetime.now()
+            driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
+
 
         return outOfStock
 

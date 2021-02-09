@@ -1,6 +1,7 @@
 .vscode
 test*.py
 *.log
+screenshots/*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
