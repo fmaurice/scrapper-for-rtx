@@ -60,11 +60,7 @@ class ScraperForRTX:
         # JS Needed here
         outOfStock = True
 
-        display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
-        display.start()
-
-        driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
-            service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'])
+        display, driver = self.getDisplayAndDriver()
 
         driver.get(self.URL_FOR_LDLC)
 
@@ -97,11 +93,7 @@ class ScraperForRTX:
         # JS Needed here
         outOfStock = True
 
-        display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
-        display.start()
-
-        driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
-            service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'])
+        display, driver = self.getDisplayAndDriver()
 
         driver.get(self.URL_FOR_FNAC)
 
@@ -131,6 +123,23 @@ class ScraperForRTX:
         display.stop()
 
         return outOfStock
+
+    def getDisplayAndDriver(self):
+        display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
+        display.start()
+
+        option = webdriver.ChromeOptions()
+        # For ChromeDriver version 79.0.3945.16 or over
+        option.add_argument('--disable-blink-features=AutomationControlled')
+        # Browser fingerprint 
+        option.add_argument("window-size=1280,800")
+        option.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36")
+        
+        driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
+            service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'],
+            options=option)
+
+        return display, driver
 
     def sendEmail(self):
         strMessage = "\n".join(self.messages)
