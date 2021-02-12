@@ -4,6 +4,7 @@ from colorama import Fore, Back, Style
 import datetime
 from subprocess import Popen, PIPE
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from pyvirtualdisplay import Display 
 import smtplib
 from email.mime.text import MIMEText
@@ -15,11 +16,14 @@ class ScraperForRTX:
     currPath = os.path.dirname(os.path.abspath(__file__))
     URL_FOR_TOP_ACHAT = 'https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html'
     URL_FOR_LDLC = 'https://www.ldlc.com/informatique/pieces-informatique/carte-graphique-interne/c4684/+fv121-19183.html'
+    URL_FOR_FNAC = 'https://www.fnac.com/SearchResult/ResultList.aspx?SCat=8!1%2c8006!2&Search=RTX3080&sft=1&sl'
+    
 
     def start(self):
         outOfstocks = []
         outOfstocks.append(self.checkTopAchatPage())
         outOfstocks.append(self.checkLDLCPage())
+        outOfstocks.append(self.checkFNACPage())
 
         if False in outOfstocks:
             self.sendEmail()
@@ -76,6 +80,45 @@ class ScraperForRTX:
                     self.printnok(listElement.text)
                     self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
                     outOfStock = False
+        except Exception as e:
+            self.printnok("Something goes wrong : " + str(e))
+            outOfStock = False
+
+        if not outOfStock:
+            now = datetime.datetime.now()
+            driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
+
+
+        return outOfStock
+
+    def checkFNACPage(self):
+        self.printok ("FNAC page...")
+        # JS Needed here
+        outOfStock = True
+
+        display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
+        display.start()
+
+        driver = webdriver.Chrome(executable_path= self.currPath + '/chromedriver', 
+            service_args=['--verbose', '--log-path=' + self.currPath + '/chromedriver.log'])
+
+        driver.get(self.URL_FOR_FNAC)
+
+        try:        
+            listing = driver.find_elements_by_css_selector('.Article-itemGroup')
+
+            if len(listing) == 0:
+                raise Exception('Element not found in the page')
+
+            for listElement in listing:
+                element = listElement.find_element_by_css_selector('.Article-itemInfo .moreInfos-table .shipping')              
+                try:
+                    element.find_element_by_css_selector('.Nodispo')
+                except NoSuchElementException as e:
+                    self.printnok(listElement.text)
+                    self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
+                    outOfStock = False
+
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
             outOfStock = False
