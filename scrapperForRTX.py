@@ -88,6 +88,7 @@ class ScraperForRTX:
             now = datetime.datetime.now()
             driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
 
+        display.stop()
 
         return outOfStock
 
@@ -127,6 +128,7 @@ class ScraperForRTX:
             now = datetime.datetime.now()
             driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
 
+        display.stop()
 
         return outOfStock
 
