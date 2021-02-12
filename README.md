@@ -13,6 +13,8 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome-stable_current_amd64.deb
 ```
 ## Installing ChromeDriver
+This linux version of chromedriver is patched to avoid detection (see https://stackoverflow.com/questions/33225947/can-a-website-detect-when-you-are-using-selenium-with-chromedriver/41220267#41220267)
+To get the original file :
 ```bash
 wget https://chromedriver.storage.googleapis.com/2.30/chromedriver_linux64.zip
 unzip chromedriver_linux64.zip
