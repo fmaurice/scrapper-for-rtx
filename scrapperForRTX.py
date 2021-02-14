@@ -8,11 +8,15 @@ from selenium.common.exceptions import NoSuchElementException
 from pyvirtualdisplay import Display 
 import smtplib
 from email.mime.text import MIMEText
-
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
 
 class ScraperForRTX:
 
     messages = []
+    outOfstocks = []
+    screenshotFullNames = []
     currPath = os.path.dirname(os.path.abspath(__file__))
     URL_FOR_TOP_ACHAT = 'https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html'
     URL_FOR_LDLC = 'https://www.ldlc.com/informatique/pieces-informatique/carte-graphique-interne/c4684/+fv121-19183.html'
@@ -20,12 +24,12 @@ class ScraperForRTX:
     
 
     def start(self):
-        outOfstocks = []
-        outOfstocks.append(self.checkTopAchatPage())
-        outOfstocks.append(self.checkLDLCPage())
-        outOfstocks.append(self.checkFNACPage())
+        
+        self.checkTopAchatPage()
+        self.checkLDLCPage()
+        self.checkFNACPage()
 
-        if False in outOfstocks:
+        if False in self.outOfstocks:
             self.sendEmail()
         else:
             self.printok('All is out of stock')
@@ -51,14 +55,13 @@ class ScraperForRTX:
                         outOfStock = False
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            outOfStock = False
-
-        return outOfStock
+            self.outOfstocks.append(False)
 
     def checkLDLCPage(self):
         self.printok ("LDLC page...")
         # JS Needed here
         outOfStock = True
+        screenshotFullName = None
 
         display, driver = self.getDisplayAndDriver()
 
@@ -78,20 +81,21 @@ class ScraperForRTX:
                     outOfStock = False
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            outOfStock = False
+            self.outOfstocks.append(False)
 
         if not outOfStock:
             now = datetime.datetime.now()
-            driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
+            screenshotFullName = self.currPath + '/screenshots/screenshot-ldlc-' + now.strftime('%Y%m%d-%H%M%S') + '.png'
+            driver.save_screenshot(screenshotFullName)
+            self.screenshotFullNames.append(screenshotFullName)
 
         display.stop()
-
-        return outOfStock
 
     def checkFNACPage(self):
         self.printok ("FNAC page...")
         # JS Needed here
         outOfStock = True
+        screenshotFullName = None
 
         display, driver = self.getDisplayAndDriver()
 
@@ -114,15 +118,14 @@ class ScraperForRTX:
 
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            outOfStock = False
+            self.outOfstocks.append(False)
 
         if not outOfStock:
-            now = datetime.datetime.now()
-            driver.save_screenshot(self.currPath + '/screenshots/screenshot-' + now.strftime('%Y%m%d-%H%M%S') + '.png')
+            screenshotFullName = self.currPath + '/screenshots/screenshot-fnac-' + now.strftime('%Y%m%d-%H%M%S') + '.png'
+            driver.save_screenshot(screenshotFullName)
+            self.screenshotFullNames.append(screenshotFullName)
 
         display.stop()
-
-        return outOfStock
 
     def getDisplayAndDriver(self):
         display = Display(visible=0, size=(1024, 1024*2)) # for the screenshot
@@ -146,6 +149,20 @@ class ScraperForRTX:
         msg = MIMEText(strMessage)
         msg['Subject'] = 'RTX 3080 scrapper'
         msg['To'] = 'root'
+
+        # attach the screenshots
+        for filename in self.screenshotFullNames:
+            with open(filename, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename= {filename}",
+            )
+            msg.attach(part)
+
         s = smtplib.SMTP('localhost')
         s.sendmail('', 'root', msg.as_string())
         s.quit()
