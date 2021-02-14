@@ -60,8 +60,6 @@ class ScraperForRTX:
     def checkLDLCPage(self):
         self.printok ("LDLC page...")
         # JS Needed here
-        outOfStock = True
-        screenshotFullName = None
 
         display, driver = self.getDisplayAndDriver()
 
@@ -76,26 +74,19 @@ class ScraperForRTX:
             for listElement in listing:
                 element = listElement.find_element_by_css_selector('.stocks .modal-stock-web .modal-stock-web')
                 if element.text != 'RUPTURE':
-                    self.printnok(listElement.text)
-                    self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
-                    outOfStock = False
+                    msg = listElement.text + "\n*** Link : %s\n" % listElement.find_element_by_tag_name('a').get_attribute('href')
+                    raise NoSuchElementException(msg)
+                    
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
             self.outOfstocks.append(False)
-
-        if not outOfStock:
-            now = datetime.datetime.now()
-            screenshotFullName = self.currPath + '/screenshots/screenshot-ldlc-' + now.strftime('%Y%m%d-%H%M%S') + '.png'
-            driver.save_screenshot(screenshotFullName)
-            self.screenshotFullNames.append(screenshotFullName)
+            self.takeScreenShot(driver, 'ldlc')
 
         display.stop()
 
     def checkFNACPage(self):
         self.printok ("FNAC page...")
         # JS Needed here
-        outOfStock = True
-        screenshotFullName = None
 
         display, driver = self.getDisplayAndDriver()
 
@@ -112,18 +103,13 @@ class ScraperForRTX:
                 try:
                     element.find_element_by_css_selector('.Nodispo')
                 except NoSuchElementException as e:
-                    self.printnok(listElement.text)
-                    self.printnok("*** Link : %s" % listElement.find_element_by_tag_name('a').get_attribute('href'))
-                    outOfStock = False
+                    e.message = listElement.text + "\n*** Link : %s\n" % listElement.find_element_by_tag_name('a').get_attribute('href')
+                    raise
 
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
             self.outOfstocks.append(False)
-
-        if not outOfStock:
-            screenshotFullName = self.currPath + '/screenshots/screenshot-fnac-' + now.strftime('%Y%m%d-%H%M%S') + '.png'
-            driver.save_screenshot(screenshotFullName)
-            self.screenshotFullNames.append(screenshotFullName)
+            self.takeScreenShot(driver, 'fnac')
 
         display.stop()
 
@@ -146,27 +132,30 @@ class ScraperForRTX:
 
     def sendEmail(self):
         strMessage = "\n".join(self.messages)
-        msg = MIMEText(strMessage)
+        msg = MIMEMultipart()
+        msg.attach(MIMEText(strMessage))
         msg['Subject'] = 'RTX 3080 scrapper'
         msg['To'] = 'root'
 
-        # attach the screenshots
+        # attach the screenshot
         for filename in self.screenshotFullNames:
-            with open(filename, "rb") as attachment:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment.read())
-
+            part = MIMEBase('application', "octet-stream")
+            part.set_payload(open(filename, "rb").read())
             encoders.encode_base64(part)
-            part.add_header(
-                "Content-Disposition",
-                f"attachment; filename= {filename}",
-            )
+            part.add_header('Content-Disposition', 'attachment; filename="{0}"'.format(os.path.basename(filename)))
             msg.attach(part)
 
         s = smtplib.SMTP('localhost')
         s.sendmail('', 'root', msg.as_string())
         s.quit()
         self.printnok("Email sended")
+
+    def takeScreenShot(self, driver, strFrom):
+        now = datetime.datetime.now()
+        screenshotFullName = self.currPath + '/screenshots/screenshot-' + strFrom + '-' + now.strftime('%Y%m%d-%H%M%S') + '.png'
+        driver.save_screenshot(screenshotFullName)
+        self.screenshotFullNames.append(screenshotFullName)
+
 
     def printok(self, message):
         self.messages.append(message)
