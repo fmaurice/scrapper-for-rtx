@@ -15,7 +15,7 @@ from email.mime.multipart import MIMEMultipart
 class ScraperForRTX:
 
     messages = []
-    outOfstocks = []
+    outOfstock = True
     screenshotFullNames = []
     currPath = os.path.dirname(os.path.abspath(__file__))
     URL_FOR_TOP_ACHAT = 'https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_mc_est_rtx%252B3080.html'
@@ -29,7 +29,7 @@ class ScraperForRTX:
         self.checkLDLCPage()
         self.checkFNACPage()
 
-        if False in self.outOfstocks:
+        if not self.outOfstock:
             self.sendEmail()
         else:
             self.printok('All is out of stock')
@@ -37,7 +37,6 @@ class ScraperForRTX:
     def checkTopAchatPage(self):
         self.printok ("Top Achat page...")
         # No JS needed here
-        outOfStock = True
         session = HTMLSession()
 
         try:
@@ -50,12 +49,12 @@ class ScraperForRTX:
             for section in sections:
                 if 'class' in section.attrs:
                     if not 'en-rupture' in section.attrs['class']:
-                        self.printnok(section.text)
-                        self.printnok("*** Link : %s" % list(section.absolute_links)[0])
-                        outOfStock = False
+                        msg = section.text + "\n"
+                        msg = msg + "*** Link : %s" % list(section.absolute_links)[0]
+                        raise NoSuchElementException(msg)
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            self.outOfstocks.append(False)
+            self.outOfstock = False
 
     def checkLDLCPage(self):
         self.printok ("LDLC page...")
@@ -79,7 +78,7 @@ class ScraperForRTX:
                     
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            self.outOfstocks.append(False)
+            self.outOfstock = False
             self.takeScreenShot(driver, 'ldlc')
 
         display.stop()
@@ -108,7 +107,7 @@ class ScraperForRTX:
 
         except Exception as e:
             self.printnok("Something goes wrong : " + str(e))
-            self.outOfstocks.append(False)
+            self.outOfstock = False
             self.takeScreenShot(driver, 'fnac')
 
         display.stop()
